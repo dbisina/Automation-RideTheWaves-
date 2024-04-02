@@ -72,25 +72,25 @@ sleep(3)
 WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "x6s0dn4")))  # Adjust class name if needed
 
 page_source = driver.page_source
+print(page_source)
 
 soup = BeautifulSoup(page_source if page_source else driver.page_source, "html.parser")
 
 private_groups = []
-for group_card in soup.find_all("div", class_="x6s0dn4"):  # Adjust class name if needed
+for group_card in soup.find_all("div", class_="x6s0dn4"):
     try:
         group_name = group_card.find("a", href=True).text.strip()
-        description = group_card.find("div", class_="du4w35lb k4urcfbm l9j0dhe7 sjgh65i0").text.strip()
-        private_indicator = group_card.find("span", {"aria-label": "Private"})
+        description = group_card.find("span", class_="x1lliihq x6ikm8r x10wlt62 x1n2onr6 x1j85h84").text.strip()
+        private_indicator = group_card.find("span", class_="x1lliihq x6ikm8r x10wlt62 x1n2onr6").text.strip()
 
-        if private_indicator and (
-                "town" in description.lower() or "community" in description.lower()
-        ):
-            private_groups.append({"name": group_name, "description": description})
+        if "Private" in private_indicator:
+                if "town" in description.lower() or "community" in description.lower():    
+                 private_groups.append({"name": group_name, "description": description})
     except AttributeError:
-        print(f"Error parsing group card: {group_card}")  # Log or handle errors
+        print(f"Error parsing group card: {group_card}")
 
-# Print or process the filtered group information
-with open("facebook_groups.txt", "a", encoding="utf-8") as file:  # Use "a" for appending
+
+with open("facebook_groups.txt", "a", encoding="utf-8") as file:
     for group in private_groups:
         file.write(f"Group Name: {group['name']}\n")
         file.write(f"Description: {group['description']}\n\n")
