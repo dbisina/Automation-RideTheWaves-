@@ -21,7 +21,7 @@ def towns_around_x(town_of_consideration, radius):
         exit()
 
     # Google Places API endpoint for text search
-    url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?keyword='town hall'&location={ref_lat},{ref_lon}&radius={radius}&key={api_key}"
+    url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?keyword=town&location={ref_lat},{ref_lon}&radius={radius}&key={api_key}"
     response = requests.get(url)
     data = response.json()
 
@@ -47,7 +47,14 @@ def towns_around_x(town_of_consideration, radius):
 
     formatted_towns = []
     for town in towns:
-        town_name, state, country = town  # Assign the last 3 words to variables
-        formatted_towns.append({"town": town_name, "state": state, "country": country})
-        
+        town_name, state, country = town
+        if not any(existing_town["town"] == town_name for existing_town in formatted_towns):
+            formatted_towns.append({"town": town_name, "state": state, "country": country})
+
+    with open(f"nearbyplaces_{town_of_consideration}.txt", "a", encoding="utf-8") as file:
+        for places in formatted_towns:
+            file.write(f"town: {places['town']}\n")
+            file.write(f"state: {places['state']}\n")
+            file.write(f"Country: {places['country']}\n\n\n")
+    
     return formatted_towns

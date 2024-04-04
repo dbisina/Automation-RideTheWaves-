@@ -34,13 +34,17 @@ def main():
     radius_meters = radius_miles * conversion_factor
 
     # Combine reference location for places.py function
-    town_of_consideration = (
-        reference_town + ", " + reference_state + ", " + reference_country
-    )
+    town_of_consideration = (f"{reference_town}, {reference_state}, {reference_country}")
 
-     # Get nearby towns using places.py
+    # Get nearby towns using places.py
     nearby_towns = towns_around_x(town_of_consideration, radius_meters)
+    nearby_towns.append({"town": reference_town, "state": reference_state, "country": reference_country})
 
+    with open("facebook_groups.txt", "a", encoding="utf-8") as file:
+        file.write(f"Private Groups located within {radius_miles} miles of {reference_town}, {reference_state}: \n\n")
+        file.close()
+
+    sleep(20)
     # Start Chrome driver
     path = ch_driver_path  # Update with your chromedriver path
     service = Service(executable_path=path)
@@ -73,7 +77,7 @@ def main():
         country_name = town["country"]
 
         # Construct the Facebook group search URL
-        search_url = f"https://web.facebook.com/search/groups?q={town_name.lower()}%2C%20{state_name.lower()}%2C%20{country_name.lower()}"
+        search_url = f"https://web.facebook.com/search/groups?q={town_name.lower()}%2C%20{state_name.lower()}%2C%20{country_name.lower()}%20town%20group"
 
         # Access the search page and scrape group information
         driver.get(search_url)
@@ -106,19 +110,20 @@ def main():
                 if member:
                     member_count = member.group(0)
 
-                if "Private" in private_indicator and member:
-                    if "town" in description.lower() or "community" in description.lower() and town_name in description.lower():
+                if "Private" in private_indicator:
+                    if ("town" or "community" and town_name in description.lower()) and ("craigslist" or "sales" or "sell" or "buy" or "craigs" not in group_name.lower()):
                         private_groups.append({"name": group_name, "link": group_link, "state": state_name, "members": member_count})
-            except AttributeError:
-                print(f"Error parsing group card: {group_card}")
+            except AttributeError: 
+                pass
 
-        # Write private group information to a file
+            # Write private group information to a file
         with open("facebook_groups.txt", "a", encoding="utf-8") as file:
             for group in private_groups:
-                file.write(f"Group Name: {group['name']}\n")
-                file.write(f"Group Link: {group['link']}\n\n")
-                file.write(f"Members: {group['members']}\n\n")
-                file.write(f"State: {group['state']}\n\n\n")
+                if group_name:
+                    file.write(f"Group Name: {group['name']}\n")
+                    file.write(f"Group Link: {group['link']}\n")
+                    file.write(f"Members: {group['members']}\n")
+                    file.write(f"State: {group['state']}\n\n\n")
 
  
     print("Group information written to facebook_groups.txt")
