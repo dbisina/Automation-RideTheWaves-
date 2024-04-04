@@ -20,6 +20,7 @@ fb_number = os.getenv("FB_NUMBER")
 fb_password = os.getenv("FB_PASSWORD")
 ch_driver_path = os.getenv("CH_DRIVER_PATH")
 
+private_groups = []
 
 def main():
     # Get user input for reference location
@@ -77,7 +78,7 @@ def main():
         country_name = town["country"]
 
         # Construct the Facebook group search URL
-        search_url = f"https://web.facebook.com/search/groups?q={town_name.lower()}%2C%20{state_name.lower()}%2C%20{country_name.lower()}%20town%20group"
+        search_url = f"https://web.facebook.com/search/groups/?q=%20{town_name.lower()}%20{state_name.lower()}%20{country_name.lower()}%20town%20group"
 
         # Access the search page and scrape group information
         driver.get(search_url)
@@ -88,11 +89,9 @@ def main():
         )
 
         page_source = driver.page_source
-        soup = BeautifulSoup(
-            page_source if page_source else driver.page_source, "html.parser"
-        )
+     
+        soup = BeautifulSoup(page_source if page_source else driver.page_source, "html.parser")
 
-        private_groups = []
         for group_card in soup.find_all("div", class_="x6s0dn4"):
             try:
                 group_name = group_card.find("a", href=True).text.strip()
@@ -110,20 +109,29 @@ def main():
                 if member:
                     member_count = member.group(0)
 
-                if "Private" in private_indicator:
-                    if ("town" or "community" and town_name in description.lower()) and ("craigslist" or "sales" or "sell" or "buy" or "craigs" not in group_name.lower()):
-                        private_groups.append({"name": group_name, "link": group_link, "state": state_name, "members": member_count})
+                if "Private".lower() in private_indicator.lower() and member_count:
+
+                    # Check for excluded keywords in group name (case-insensitive)
+                    if any(word not in group_name.lower() for word in ["craigslist", "sales", "sell", "buy", "craigs", "craigs list", "sale"]):
+                        
+                    
+                        # Check for "town" or "community" AND town name in description (case-insensitive)
+                        if ("town" in description.lower() or "community" or "forum" in description.lower()) and town_name.lower() in description.lower():
+
+                            if group_name != "":
+                                private_groups.append({"name": group_name, "link": group_link, "state": state_name, "members": member_count})
+
             except AttributeError: 
                 pass
 
-            # Write private group information to a file
-        with open("facebook_groups.txt", "a", encoding="utf-8") as file:
-            for group in private_groups:
-                if group_name:
-                    file.write(f"Group Name: {group['name']}\n")
-                    file.write(f"Group Link: {group['link']}\n")
-                    file.write(f"Members: {group['members']}\n")
-                    file.write(f"State: {group['state']}\n\n\n")
+
+    # Write private group information to a file
+    with open("facebook_groups.txt", "a", encoding="utf-8") as file:
+        for group in private_groups:
+            file.write(f"Group Name: {group['name']}\n")
+            file.write(f"Group Link: {group['link']}\n")
+            file.write(f"Members: {group['members']}\n")
+            file.write(f"State: {group['state']}\n\n\n")
 
  
     print("Group information written to facebook_groups.txt")
